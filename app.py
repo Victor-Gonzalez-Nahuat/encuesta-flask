@@ -106,7 +106,7 @@ def encuesta():
                 )
             """
 
-            folio_valor_db = None # Inserta NULL en la columna 'folio' (VARCHAR/TEXT)
+            folio_valor_db = "None" # Inserta NULL en la columna 'folio' (VARCHAR/TEXT)
 
             cursor.execute(sql, (
                 folio_valor_db,
