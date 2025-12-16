@@ -5,14 +5,12 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-# Nota: La función obtener_gps() ya no es necesaria, 
-# ya que la ubicación se obtendrá directamente del navegador con JavaScript.
+
 
 load_dotenv()
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_aqui' # Necesario para sesiones/mensajes flash
 
-# --- Conexión a la Base de Datos ---
 
 def get_connection():
     DB_HOST = os.getenv('DB_HOST')
@@ -32,19 +30,15 @@ def get_connection():
         print(f"Error de conexión a DB: {e}")
         return None
 
-# --- Rutas de la Aplicación ---
 
 @app.route('/', methods=['GET', 'POST'])
 def encuesta():
-    """Maneja la visualización del formulario y el envío de datos."""
     
-    # 1. INICIALIZACIÓN: Aseguramos que esta variable exista siempre.
     folio_generado = "Se generará automáticamente" 
     
     if request.method == 'POST':
         try:
-            # 1. Recuperar datos del formulario, incluyendo Lat/Lon de JavaScript
-            # Los datos vienen de la solicitud POST
+
             nombre = request.form.get('nombre')
             direccion = request.form.get('direccion')
             colonia = request.form.get('colonia')
@@ -65,16 +59,11 @@ def encuesta():
             cont_basura = request.form.get('cmb_cont_basura')
             num_cont_basura = request.form.get('tx_num_cont_basura')
             
-            # ¡Las variables clave con GPS preciso!
             latitud = request.form.get('latitud_gps')
             longitud = request.form.get('longitud_gps')
 
-            # Generar datos complementarios
             encuestador = "ENCUESTADOR MUNICIPAL"
             
-            # =======================================================
-            # LÓGICA DE SUBIDA DE FOTO (request.files)
-            # =======================================================
             foto_archivo = request.files.get('foto_predio')
             foto_blob = None
             
@@ -84,15 +73,12 @@ def encuesta():
                 except Exception as file_err:
                     print(f"Error al leer el archivo de la foto: {file_err}")
 
-            # 2. Guardar en Base de Datos
             conn = get_connection()
             if not conn:
                 raise Exception("Error de conexión a la base de datos.")
                 
             cursor = conn.cursor()
             
-            # NOTA CLAVE: No se incluye 'id' en el INSERT porque es AUTO_INCREMENT.
-            # 'folio' se establece a NULL (o vacío) como se solicitó.
             sql = """
                 INSERT INTO ENCUESTAS_TELCHAC (
                     folio, fecha, nombre, direccion, colonia, telefono, problema_agua, problema_basura, 
@@ -106,32 +92,62 @@ def encuesta():
                 )
             """
 
-            folio_valor_db = "None" # Inserta NULL en la columna 'folio' (VARCHAR/TEXT)
+            folio_valor_db = None 
+            
+            # --- TUPLA DE PARÁMETROS ORDENADA Y COMPLETA (24 valores) ---
+            parametros = (
+                # 1. Columna 'folio'
+                folio_valor_db, 
 
-            cursor.execute(sql, (
-                folio_valor_db,
-                nombre, direccion, colonia, telefono, agua, basura, frec, serv_agua,
-                tiene_const, tipo_const, niveles, material, estado, obs, uso,
-                cont_agua, num_cont_agua, cont_basura, num_cont_basura,
-                latitud, longitud, foto_blob, encuestador
-            ))
+                # 2. Datos de Identificación
+                nombre, 
+                direccion, 
+                colonia, 
+                telefono, 
 
-            # 3. Recuperamos el ID consecutivo generado (el valor de la columna 'id')
+                # 3. Servicios 
+                agua, 
+                basura, 
+                frec, 
+                serv_agua, 
+
+                # 4. Construcción 
+                tiene_const, 
+                tipo_const, 
+                niveles, 
+                material, 
+                estado, 
+
+                # 5. Observaciones y Uso
+                obs, 
+                uso, 
+
+                # 6. Contratos 
+                cont_agua, 
+                num_cont_agua, 
+                cont_basura, 
+                num_cont_basura, 
+
+                # 7. GPS y Archivos
+                latitud, 
+                longitud, 
+                foto_blob, 
+                encuestador
+            )
+            
+            cursor.execute(sql, parametros)
+
             folio_generado = cursor.lastrowid
 
             conn.commit()
             conn.close()
 
-            # 4. Redireccionar al éxito
             return redirect(url_for('exito', folio=folio_generado))
 
         except Exception as err:
-            # Si hay error (DB, conexión, etc.), mostramos el mensaje de error.
             print(f"Error al guardar: {err}")
-            # Usamos el valor inicializado de 'folio_generado' (Se generará automáticamente)
             return render_template('encuesta.html', error=f"Error al guardar: {err}", folio=folio_generado)
 
-    # 5. LÓGICA GET: Si se accede a la ruta directamente (sin POST)
     return render_template('encuesta.html', folio=folio_generado)
 
 @app.route('/exito')
@@ -141,5 +157,4 @@ def exito():
 
 
 if __name__ == '__main__':
-    # 'host=0.0.0.0' hace que la aplicación sea accesible desde cualquier IP.
     app.run(debug=True, host='0.0.0.0', port=5000)
