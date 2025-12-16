@@ -38,9 +38,12 @@ def get_connection():
 def encuesta():
     """Maneja la visualización del formulario y el envío de datos."""
     
+    # 1. INICIALIZACIÓN: Aseguramos que esta variable exista siempre.
+    folio_generado = "Se generará automáticamente" 
+    
     if request.method == 'POST':
-        # 1. Recuperar datos del formulario, incluyendo Lat/Lon de JavaScript
         try:
+            # 1. Recuperar datos del formulario, incluyendo Lat/Lon de JavaScript
             # Los datos vienen de la solicitud POST
             nombre = request.form.get('nombre')
             direccion = request.form.get('direccion')
@@ -66,34 +69,30 @@ def encuesta():
             latitud = request.form.get('latitud_gps')
             longitud = request.form.get('longitud_gps')
 
-            # Generar Folio y otros datos
-            folio = f"TP-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            # Generar datos complementarios
             encuestador = "ENCUESTADOR MUNICIPAL"
             
             # =======================================================
-            # 1. LÓGICA DE SUBIDA DE FOTO (request.files)
-            # El nombre del campo HTML es 'foto_predio'
+            # LÓGICA DE SUBIDA DE FOTO (request.files)
+            # =======================================================
             foto_archivo = request.files.get('foto_predio')
             foto_blob = None
             
-            # Solo intentamos leer si se subió un archivo
             if foto_archivo and foto_archivo.filename != '':
                 try:
-                    # Leemos el contenido binario del archivo para el LONGBLOB
                     foto_blob = foto_archivo.read()
                 except Exception as file_err:
                     print(f"Error al leer el archivo de la foto: {file_err}")
-                    # Dejamos foto_blob en None si hay error de lectura
-            # =======================================================
 
-            # 2. Guardar en Base de Datos (Lógica de tu función guardar_encuesta)
+            # 2. Guardar en Base de Datos
             conn = get_connection()
             if not conn:
-                return "Error de conexión a la base de datos.", 500
+                raise Exception("Error de conexión a la base de datos.")
                 
             cursor = conn.cursor()
             
-            # La consulta SQL está perfecta para recibir el BLOB
+            # NOTA CLAVE: No se incluye 'id' en el INSERT porque es AUTO_INCREMENT.
+            # 'folio' se establece a NULL (o vacío) como se solicitó.
             sql = """
                 INSERT INTO ENCUESTAS_TELCHAC (
                     folio, fecha, nombre, direccion, colonia, telefono, problema_agua, problema_basura, 
@@ -103,31 +102,37 @@ def encuesta():
                     latitud, longitud, foto, encuestador
                 )
                 VALUES (
-                    %s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
             """
 
+            folio_valor_db = None # Inserta NULL en la columna 'folio' (VARCHAR/TEXT)
+
             cursor.execute(sql, (
-                folio,
+                folio_valor_db,
                 nombre, direccion, colonia, telefono, agua, basura, frec, serv_agua,
                 tiene_const, tipo_const, niveles, material, estado, obs, uso,
                 cont_agua, num_cont_agua, cont_basura, num_cont_basura,
-                latitud, longitud, foto_blob, encuestador # Aquí se pasa el binario (BLOB)
+                latitud, longitud, foto_blob, encuestador
             ))
+
+            # 3. Recuperamos el ID consecutivo generado (el valor de la columna 'id')
+            folio_generado = cursor.lastrowid
 
             conn.commit()
             conn.close()
 
-            # 3. Redireccionar al éxito
-            return redirect(url_for('exito', folio=folio))
+            # 4. Redireccionar al éxito
+            return redirect(url_for('exito', folio=folio_generado))
 
         except Exception as err:
+            # Si hay error (DB, conexión, etc.), mostramos el mensaje de error.
             print(f"Error al guardar: {err}")
-            # En Flask, puedes usar "flash" para mostrar mensajes de error
-            return render_template('encuesta.html', error=f"Error al guardar: {err}")
+            # Usamos el valor inicializado de 'folio_generado' (Se generará automáticamente)
+            return render_template('encuesta.html', error=f"Error al guardar: {err}", folio=folio_generado)
 
-    # Si es GET, mostrar el formulario
-    return render_template('encuesta.html', folio=f"TP-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+    # 5. LÓGICA GET: Si se accede a la ruta directamente (sin POST)
+    return render_template('encuesta.html', folio=folio_generado)
 
 @app.route('/exito')
 def exito():
@@ -136,6 +141,5 @@ def exito():
 
 
 if __name__ == '__main__':
-    # 'host=0.0.0.0' hace que la aplicación sea accesible desde cualquier IP, 
-    # incluyendo tu red local.
+    # 'host=0.0.0.0' hace que la aplicación sea accesible desde cualquier IP.
     app.run(debug=True, host='0.0.0.0', port=5000)
