@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encuesta Telchac Puerto - Flask</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container { max-width: 600px; margin-top: 20px; }
+        .card { margin-bottom: 20px; }
+        .form-section { padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">Encuesta de Propiedades - Telchac</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% if error %}
+        <div class="alert alert-danger" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form action="/" method="POST">
+            <h2 class="text-primary mb-4">Datos Generales</h2>
+            
+            <div class="card shadow-sm p-4">
+                <h5>Información del Residente y Geolocalización</h5>
+                
+                <p>Folio de Encuesta: <strong>{{ folio }}</strong></p>
+
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="nombre" name="nombre" required>
+                </div>
+                <div class="mb-3">
+                    <label for="direccion" class="form-label">Dirección</label>
+                    <input type="text" class="form-control" id="direccion" name="direccion" required>
+                </div>
+                <div class="mb-3">
+                    <label for="colonia" class="form-label">Colonia</label>
+                    <input type="text" class="form-control" id="colonia" name="colonia" required>
+                </div>
+                <div class="mb-3">
+                    <label for="telefono" class="form-label">Teléfono</label>
+                    <input type="text" class="form-control" id="telefono" name="telefono">
+                </div>
+                
+                <hr>
+                
+                <input type="hidden" id="latitud_gps" name="latitud_gps" value="" required>
+                <input type="hidden" id="longitud_gps" name="longitud_gps" value="" required>
+
+                <button type="button" id="btn_gps" class="btn btn-info mb-3">📍 Obtener Ubicación GPS Precisa</button>
+                <p id="gps_status" class="text-muted">Estado: Pendiente de obtener ubicación.</p>
+                <p><small>Latitud: <span id="display_lat">N/A</span> | Longitud: <span id="display_lon">N/A</span></small></p>
+
+            </div>
+
+            <h2 class="text-primary mt-5">Servicio de Recolección de Basura</h2>
+            <div class="card shadow-sm p-4">
+                <div class="mb-3">
+                    <label for="cmb_basura" class="form-label">Problema basura</label>
+                    <select class="form-select" id="cmb_basura" name="cmb_basura">
+                        <option value="Bien">Bien</option>
+                        <option value="Mal">Mal</option>
+                        </select>
+                </div>
+                <div class="mb-3">
+                    <label for="cmb_frec" class="form-label">Frecuencia recolección</label>
+                    <select class="form-select" id="cmb_frec" name="cmb_frec">
+                        <option value="Diario">Diario</option>
+                        <option value="Semanal">Semanal</option>
+                        </select>
+                </div>
+                <div class="mb-3">
+                    <label for="cmb_cont_basura" class="form-label">Contrato basura</label>
+                    <select class="form-select" id="cmb_cont_basura" name="cmb_cont_basura">
+                        <option value="Sí">Sí</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="tx_num_cont_basura" class="form-label">Número contrato basura</label>
+                    <input type="number" class="form-control" id="tx_num_cont_basura" name="tx_num_cont_basura">
+                </div>
+            </div>
+
+            <h2 class="text-primary mt-5">Servicio de Suministro de Agua</h2>
+            <div class="card shadow-sm p-4">
+                <div class="mb-3">
+                    <label for="cmb_agua" class="form-label">Problema agua</label>
+                    <select class="form-select" id="cmb_agua" name="cmb_agua">
+                        <option value="Bien">Bien</option>
+                        <option value="Mal">Mal</option>
+                        </select>
+                </div>
+                <div class="mb-3">
+                    <label for="cmb_servicio_agua" class="form-label">Servicio agua</label>
+                    <select class="form-select" id="cmb_servicio_agua" name="cmb_servicio_agua">
+                        <option value="Red municipal">Red municipal</option>
+                        <option value="Pipas">Pipas</option>
+                        </select>
+                </div>
+                <div class="mb-3">
+                    <label for="cmb_cont_agua" class="form-label">Contrato agua</label>
+                    <select class="form-select" id="cmb_cont_agua" name="cmb_cont_agua">
+                        <option value="Sí">Sí</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="tx_num_cont_agua" class="form-label">Número contrato agua</label>
+                    <input type="number" class="form-control" id="tx_num_cont_agua" name="tx_num_cont_agua">
+                </div>
+            </div>
+            
+            <h2 class="text-primary mt-5">Detalles del Predio y Construcción</h2>
+            <div class="card shadow-sm p-4">
+                 <div class="mb-3">
+                    <label for="cmb_tiene_const" class="form-label">¿Tiene construcción?</label>
+                    <select class="form-select" id="cmb_tiene_const" name="cmb_tiene_const">
+                        <option value="Sí">Sí</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="cmb_tipo_const" class="form-label">Tipo de construcción</label>
+                    <select class="form-select" id="cmb_tipo_const" name="cmb_tipo_const">
+                        <option value="Casa">Casa</option>
+                        <option value="Cuarto">Cuarto</option>
+                        </select>
+                </div>
+                <div class="mb-3">
+                    <label for="tx_obs_const" class="form-label">Observaciones</label>
+                    <textarea class="form-control" id="tx_obs_const" name="tx_obs_const" rows="3"></textarea>
+                </div>
+            </div>
+
+            <button type="submit" id="submit_btn" class="btn btn-success btn-lg w-100 mt-4 mb-5" disabled>
+                💾 Guardar Encuesta (Obtenga GPS primero)
+            </button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('btn_gps').addEventListener('click', getAccurateLocation);
+        const latInput = document.getElementById('latitud_gps');
+        const lonInput = document.getElementById('longitud_gps');
+        const statusText = document.getElementById('gps_status');
+        const submitBtn = document.getElementById('submit_btn');
+
+        function getAccurateLocation() {
+            if (!navigator.geolocation) {
+                statusText.innerHTML = 'Estado: ❌ Tu navegador no soporta Geolocalización.';
+                statusText.classList.remove('text-muted');
+                statusText.classList.add('text-danger');
+                return;
+            }
+
+            statusText.innerHTML = 'Estado: ⌛ Buscando ubicación precisa...';
+            submitBtn.disabled = true;
+
+            // Opciones para mayor precisión (requiere más tiempo)
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000, // 10 segundos para buscar
+                maximumAge: 0
+            };
+
+            navigator.geolocation.getCurrentPosition(success, error, options);
+        }
+
+        function success(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            // 1. Asigna los valores a los campos ocultos del formulario (Flask los recibirá)
+            latInput.value = lat;
+            lonInput.value = lon;
+
+            // 2. Actualiza la UI para el usuario
+            document.getElementById('display_lat').textContent = lat.toFixed(6);
+            document.getElementById('display_lon').textContent = lon.toFixed(6);
+            statusText.innerHTML = 'Estado: ✅ Ubicación GPS obtenida con éxito.';
+            statusText.classList.remove('text-muted', 'text-danger');
+            statusText.classList.add('text-success');
+
+            // 3. Habilita el botón de guardar
+            submitBtn.disabled = false;
+            submitBtn.textContent = '💾 Guardar Encuesta';
+        }
+
+        function error(err) {
+            // Manejar errores (ej. usuario denegó permiso)
+            let msg = 'Error desconocido';
+            switch (err.code) {
+                case err.PERMISSION_DENIED:
+                    msg = "El usuario denegó la solicitud de Geolocalización.";
+                    break;
+                case err.POSITION_UNAVAILABLE:
+                    msg = "Información de ubicación no disponible.";
+                    break;
+                case err.TIMEOUT:
+                    msg = "La solicitud para obtener la ubicación expiró.";
+                    break;
+            }
+            statusText.innerHTML = `Estado: ❌ Error (${msg})`;
+            statusText.classList.remove('text-muted', 'text-success');
+            statusText.classList.add('text-danger');
+            submitBtn.disabled = true;
+            console.warn(`ERROR(${err.code}): ${err.message}`);
+        }
+    </script>
+</body>
+</html>
