@@ -5,13 +5,11 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-
-
 load_dotenv()
 app = Flask(__name__)
-app.secret_key = 'tu_clave_secreta_aqui' # Necesario para sesiones/mensajes flash
+app.secret_key = 'tu_clave_secreta_aqui'
 
-
+# --- Conexión a la Base de Datos (sin cambios) ---
 def get_connection():
     DB_HOST = os.getenv('DB_HOST')
     DB_USER = os.getenv('DB_USER')
@@ -30,6 +28,7 @@ def get_connection():
         print(f"Error de conexión a DB: {e}")
         return None
 
+# --- Rutas de la Aplicación ---
 
 @app.route('/', methods=['GET', 'POST'])
 def encuesta():
@@ -38,7 +37,9 @@ def encuesta():
     
     if request.method == 'POST':
         try:
-
+            # ----------------------------------------------------
+            # 1. Recuperación de datos (sin cambios)
+            # ----------------------------------------------------
             nombre = request.form.get('nombre')
             direccion = request.form.get('direccion')
             colonia = request.form.get('colonia')
@@ -64,6 +65,10 @@ def encuesta():
 
             encuestador = "ENCUESTADOR MUNICIPAL"
             
+            # --- GENERAR FECHA EN PYTHON PARA EL VARCHAR(20) ---
+            fecha_actual = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # LÓGICA DE SUBIDA DE FOTO (sin cambios)
             foto_archivo = request.files.get('foto_predio')
             foto_blob = None
             
@@ -73,12 +78,14 @@ def encuesta():
                 except Exception as file_err:
                     print(f"Error al leer el archivo de la foto: {file_err}")
 
+            # 2. Guardar en Base de Datos
             conn = get_connection()
             if not conn:
                 raise Exception("Error de conexión a la base de datos.")
                 
             cursor = conn.cursor()
             
+            # --- CAMBIO 1: EL SQL AHORA USA %s PARA LA FECHA ---
             sql = """
                 INSERT INTO ENCUESTAS_TELCHAC (
                     folio, fecha, nombre, direccion, colonia, telefono, problema_agua, problema_basura, 
@@ -88,52 +95,56 @@ def encuesta():
                     latitud, longitud, foto, encuestador
                 )
                 VALUES (
-                    %s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
             """
 
             folio_valor_db = None 
             
-            # --- TUPLA DE PARÁMETROS ORDENADA Y COMPLETA (24 valores) ---
+            # --- CAMBIO 2: AGREGAMOS fecha_actual a la tupla (TOTAL 25 parámetros) ---
             parametros = (
                 # 1. Columna 'folio'
                 folio_valor_db, 
+                
+                # 2. Columna 'fecha' (NUEVO)
+                fecha_actual,
 
-                # 2. Datos de Identificación
+                # 3. Datos de Identificación
                 nombre, 
                 direccion, 
                 colonia, 
                 telefono, 
 
-                # 3. Servicios 
+                # 4. Servicios 
                 agua, 
                 basura, 
                 frec, 
                 serv_agua, 
 
-                # 4. Construcción 
+                # 5. Construcción 
                 tiene_const, 
                 tipo_const, 
                 niveles, 
                 material, 
                 estado, 
 
-                # 5. Observaciones y Uso
+                # 6. Observaciones y Uso
                 obs, 
                 uso, 
 
-                # 6. Contratos 
+                # 7. Contratos 
                 cont_agua, 
                 num_cont_agua, 
                 cont_basura, 
                 num_cont_basura, 
 
-                # 7. GPS y Archivos
+                # 8. GPS y Archivos
                 latitud, 
                 longitud, 
                 foto_blob, 
                 encuestador
             )
+            # -------------------------------------------------------------------
             
             cursor.execute(sql, parametros)
 
