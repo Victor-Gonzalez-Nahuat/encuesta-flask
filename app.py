@@ -70,9 +70,21 @@ def encuesta():
             folio = f"TP-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
             encuestador = "ENCUESTADOR MUNICIPAL"
             
-            # Nota: La lógica de la foto se ha omitido por simplicidad en la migración.
-            # Los archivos (fotos) se manejan de manera diferente en Flask (request.files).
-            foto_blob = None 
+            # =======================================================
+            # 1. LÓGICA DE SUBIDA DE FOTO (request.files)
+            # El nombre del campo HTML es 'foto_predio'
+            foto_archivo = request.files.get('foto_predio')
+            foto_blob = None
+            
+            # Solo intentamos leer si se subió un archivo
+            if foto_archivo and foto_archivo.filename != '':
+                try:
+                    # Leemos el contenido binario del archivo para el LONGBLOB
+                    foto_blob = foto_archivo.read()
+                except Exception as file_err:
+                    print(f"Error al leer el archivo de la foto: {file_err}")
+                    # Dejamos foto_blob en None si hay error de lectura
+            # =======================================================
 
             # 2. Guardar en Base de Datos (Lógica de tu función guardar_encuesta)
             conn = get_connection()
@@ -81,6 +93,7 @@ def encuesta():
                 
             cursor = conn.cursor()
             
+            # La consulta SQL está perfecta para recibir el BLOB
             sql = """
                 INSERT INTO ENCUESTAS_TELCHAC (
                     folio, fecha, nombre, direccion, colonia, telefono, problema_agua, problema_basura, 
@@ -99,7 +112,7 @@ def encuesta():
                 nombre, direccion, colonia, telefono, agua, basura, frec, serv_agua,
                 tiene_const, tipo_const, niveles, material, estado, obs, uso,
                 cont_agua, num_cont_agua, cont_basura, num_cont_basura,
-                latitud, longitud, foto_blob, encuestador
+                latitud, longitud, foto_blob, encuestador # Aquí se pasa el binario (BLOB)
             ))
 
             conn.commit()

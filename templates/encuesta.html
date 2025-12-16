@@ -6,14 +6,15 @@
     <title>Encuesta Telchac Puerto - Flask</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .container { max-width: 600px; margin-top: 20px; }
-        .card { margin-bottom: 20px; }
-        .form-section { padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-top: 15px; }
+        .container { max-width: 700px; margin-top: 20px; }
+        .card { margin-bottom: 25px; border-left: 5px solid #0d6efd; }
+        .card-title { color: #0d6efd; font-weight: bold; }
+        .form-section h2 { border-bottom: 2px solid #0d6efd; padding-bottom: 5px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-dark bg-primary">
-        <div class="container-fluid">
+        <div class="container-fluid container">
             <span class="navbar-brand mb-0 h1">Encuesta de Propiedades - Telchac</span>
         </div>
     </nav>
@@ -23,17 +24,17 @@
         <div class="alert alert-danger" role="alert">{{ error }}</div>
         {% endif %}
 
-        <form action="/" method="POST">
-            <h2 class="text-primary mb-4">Datos Generales</h2>
+        <form action="/" method="POST" enctype="multipart/form-data">
+            <h1 class="text-primary mb-4 mt-3">Formulario de Encuesta</h1>
             
             <div class="card shadow-sm p-4">
-                <h5>Información del Residente y Geolocalización</h5>
+                <h4 class="card-title">Datos Generales y Geolocalización</h4>
                 
-                <p>Folio de Encuesta: <strong>{{ folio }}</strong></p>
+                <p class="mb-3">Folio de Encuesta: <strong class="text-info">{{ folio }}</strong></p>
 
                 <div class="mb-3">
                     <label for="nombre" class="form-label">Nombre</label>
-                    <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre del residente o 'No presente'" required>
                 </div>
                 <div class="mb-3">
                     <label for="direccion" class="form-label">Dirección</label>
@@ -45,10 +46,23 @@
                 </div>
                 <div class="mb-3">
                     <label for="telefono" class="form-label">Teléfono</label>
-                    <input type="text" class="form-control" id="telefono" name="telefono">
+                    <input type="tel" class="form-control" id="telefono" name="telefono">
                 </div>
                 
                 <hr>
+
+                <div class="mb-4">
+                    <label for="foto_predio" class="form-label">📸 Tomar Foto del Predio</label>
+                    <input 
+                        type="file" 
+                        class="form-control" 
+                        id="foto_predio" 
+                        name="foto_predio" 
+                        accept="image/*" 
+                        capture="camera"
+                    >
+                    <small class="form-text text-muted">Asegúrate de que la foto se tome o se seleccione antes de guardar.</small>
+                </div>
                 
                 <input type="hidden" id="latitud_gps" name="latitud_gps" value="" required>
                 <input type="hidden" id="longitud_gps" name="longitud_gps" value="" required>
@@ -59,82 +73,150 @@
 
             </div>
 
-            <h2 class="text-primary mt-5">Servicio de Recolección de Basura</h2>
             <div class="card shadow-sm p-4">
-                <div class="mb-3">
-                    <label for="cmb_basura" class="form-label">Problema basura</label>
-                    <select class="form-select" id="cmb_basura" name="cmb_basura">
-                        <option value="Bien">Bien</option>
-                        <option value="Mal">Mal</option>
+                <h4 class="card-title">Servicio de Recolección de Basura</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_basura" class="form-label">Problema basura</label>
+                        <select class="form-select" id="cmb_basura" name="cmb_basura">
+                            <option value="Bien">Bien</option>
+                            <option value="Mal">Mal</option>
+                            <option value="Muy mal">Muy mal</option>
+                            <option value="No pasa el camión">No pasa el camión</option>
                         </select>
-                </div>
-                <div class="mb-3">
-                    <label for="cmb_frec" class="form-label">Frecuencia recolección</label>
-                    <select class="form-select" id="cmb_frec" name="cmb_frec">
-                        <option value="Diario">Diario</option>
-                        <option value="Semanal">Semanal</option>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_frec" class="form-label">Frecuencia recolección</label>
+                        <select class="form-select" id="cmb_frec" name="cmb_frec">
+                            <option value="Diario">Diario</option>
+                            <option value="Cada 2 días">Cada 2 días</option>
+                            <option value="Semanal">Semanal</option>
+                            <option value="Nunca">Nunca</option>
                         </select>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="cmb_cont_basura" class="form-label">Contrato basura</label>
-                    <select class="form-select" id="cmb_cont_basura" name="cmb_cont_basura">
-                        <option value="Sí">Sí</option>
-                        <option value="No">No</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="tx_num_cont_basura" class="form-label">Número contrato basura</label>
-                    <input type="number" class="form-control" id="tx_num_cont_basura" name="tx_num_cont_basura">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_cont_basura" class="form-label">Contrato basura</label>
+                        <select class="form-select" id="cmb_cont_basura" name="cmb_cont_basura">
+                            <option value="Sí">Sí</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="tx_num_cont_basura" class="form-label">Número contrato basura</label>
+                        <input type="number" class="form-control" id="tx_num_cont_basura" name="tx_num_cont_basura">
+                    </div>
                 </div>
             </div>
 
-            <h2 class="text-primary mt-5">Servicio de Suministro de Agua</h2>
             <div class="card shadow-sm p-4">
-                <div class="mb-3">
-                    <label for="cmb_agua" class="form-label">Problema agua</label>
-                    <select class="form-select" id="cmb_agua" name="cmb_agua">
-                        <option value="Bien">Bien</option>
-                        <option value="Mal">Mal</option>
+                <h4 class="card-title">Servicio de Suministro de Agua</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_agua" class="form-label">Problema agua</label>
+                        <select class="form-select" id="cmb_agua" name="cmb_agua">
+                            <option value="Bien">Bien</option>
+                            <option value="Mal">Mal</option>
+                            <option value="A veces">A veces</option>
+                            <option value="No tiene servicio">No tiene servicio</option>
                         </select>
-                </div>
-                <div class="mb-3">
-                    <label for="cmb_servicio_agua" class="form-label">Servicio agua</label>
-                    <select class="form-select" id="cmb_servicio_agua" name="cmb_servicio_agua">
-                        <option value="Red municipal">Red municipal</option>
-                        <option value="Pipas">Pipas</option>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_servicio_agua" class="form-label">Servicio agua</label>
+                        <select class="form-select" id="cmb_servicio_agua" name="cmb_servicio_agua">
+                            <option value="Red municipal">Red municipal</option>
+                            <option value="Pipas">Pipas</option>
+                            <option value="Pozo">Pozo</option>
+                            <option value="Otro">Otro</option>
                         </select>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="cmb_cont_agua" class="form-label">Contrato agua</label>
-                    <select class="form-select" id="cmb_cont_agua" name="cmb_cont_agua">
-                        <option value="Sí">Sí</option>
-                        <option value="No">No</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="tx_num_cont_agua" class="form-label">Número contrato agua</label>
-                    <input type="number" class="form-control" id="tx_num_cont_agua" name="tx_num_cont_agua">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_cont_agua" class="form-label">Contrato agua</label>
+                        <select class="form-select" id="cmb_cont_agua" name="cmb_cont_agua">
+                            <option value="Sí">Sí</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="tx_num_cont_agua" class="form-label">Número contrato agua</label>
+                        <input type="number" class="form-control" id="tx_num_cont_agua" name="tx_num_cont_agua">
+                    </div>
                 </div>
             </div>
             
-            <h2 class="text-primary mt-5">Detalles del Predio y Construcción</h2>
             <div class="card shadow-sm p-4">
-                 <div class="mb-3">
-                    <label for="cmb_tiene_const" class="form-label">¿Tiene construcción?</label>
-                    <select class="form-select" id="cmb_tiene_const" name="cmb_tiene_const">
-                        <option value="Sí">Sí</option>
-                        <option value="No">No</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="cmb_tipo_const" class="form-label">Tipo de construcción</label>
-                    <select class="form-select" id="cmb_tipo_const" name="cmb_tipo_const">
-                        <option value="Casa">Casa</option>
-                        <option value="Cuarto">Cuarto</option>
+                <h4 class="card-title">Predio y Características de la Construcción</h4>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_tiene_const" class="form-label">¿Tiene construcción?</label>
+                        <select class="form-select" id="cmb_tiene_const" name="cmb_tiene_const">
+                            <option value="Sí">Sí</option>
+                            <option value="No">No</option>
                         </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_tipo_const" class="form-label">Tipo de construcción</label>
+                        <select class="form-select" id="cmb_tipo_const" name="cmb_tipo_const">
+                            <option value="Casa">Casa</option>
+                            <option value="Cuarto">Cuarto</option>
+                            <option value="Ampliación">Ampliación</option>
+                            <option value="Negocio">Negocio</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
                 </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_niveles" class="form-label">Niveles</label>
+                        <select class="form-select" id="cmb_niveles" name="cmb_niveles">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="Más de 3">Más de 3</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_material" class="form-label">Material</label>
+                        <select class="form-select" id="cmb_material" name="cmb_material">
+                            <option value="Block">Block</option>
+                            <option value="Madera">Madera</option>
+                            <option value="Lámina">Lámina</option>
+                            <option value="Mixto">Mixto</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_estado" class="form-label">Estado construcción</label>
+                        <select class="form-select" id="cmb_estado" name="cmb_estado">
+                            <option value="Bueno">Bueno</option>
+                            <option value="Regular">Regular</option>
+                            <option value="Malo">Malo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="cmb_uso" class="form-label">Uso del predio</label>
+                        <select class="form-select" id="cmb_uso" name="cmb_uso">
+                            <option value="Habitacional">Habitacional</option>
+                            <option value="Comercial">Comercial</option>
+                            <option value="Mixto">Mixto</option>
+                            <option value="Servicio">Servicio</option>
+                            <option value="Bodega">Bodega</option>
+                            <option value="Taller">Taller</option>
+                            <option value="Abandonado">Abandonado</option>
+                            <option value="Baldío">Baldío</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="mb-3">
-                    <label for="tx_obs_const" class="form-label">Observaciones</label>
+                    <label for="tx_obs_const" class="form-label">Observaciones (detalles relevantes)</label>
                     <textarea class="form-control" id="tx_obs_const" name="tx_obs_const" rows="3"></textarea>
                 </div>
             </div>
@@ -163,10 +245,10 @@
             statusText.innerHTML = 'Estado: ⌛ Buscando ubicación precisa...';
             submitBtn.disabled = true;
 
-            // Opciones para mayor precisión (requiere más tiempo)
+            // Opciones para mayor precisión y tiempo de espera
             const options = {
                 enableHighAccuracy: true,
-                timeout: 10000, // 10 segundos para buscar
+                timeout: 15000, // 15 segundos para buscar
                 maximumAge: 0
             };
 
@@ -194,7 +276,6 @@
         }
 
         function error(err) {
-            // Manejar errores (ej. usuario denegó permiso)
             let msg = 'Error desconocido';
             switch (err.code) {
                 case err.PERMISSION_DENIED:
@@ -211,8 +292,10 @@
             statusText.classList.remove('text-muted', 'text-success');
             statusText.classList.add('text-danger');
             submitBtn.disabled = true;
+            submitBtn.textContent = '💾 Guardar Encuesta (Obtenga GPS primero)';
             console.warn(`ERROR(${err.code}): ${err.message}`);
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
