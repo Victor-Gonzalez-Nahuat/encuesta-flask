@@ -4,6 +4,10 @@ import pymysql
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from flask import session
+from functools import wraps
+
+
 
 load_dotenv()
 app = Flask(__name__)
@@ -28,9 +32,53 @@ def get_connection():
         print(f"Error de conexión a DB: {e}")
         return None
 
+def login_requerido(f):
+    @wraps(f)
+    def decorador(*args, **kwargs):
+        if 'usuario' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorador
+
+
 # --- Rutas de la Aplicación ---
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        usuario = request.form.get('usuario')
+        password = request.form.get('password')
+
+        conn = get_connection()
+        if not conn:
+            return render_template(
+                'login.html',
+                error="No se pudo conectar a la base de datos"
+            )
+
+        cursor = conn.cursor()
+        sql = "SELECT usuario FROM ENCUESTADORES_TELCHAC WHERE usuario=%s AND password=%s"
+        cursor.execute(sql, (usuario, password))
+        result = cursor.fetchone()
+        conn.close()
+
+        if result:
+            session['usuario'] = usuario
+            return redirect(url_for('encuesta'))
+        else:
+            return render_template('login.html', error="Credenciales incorrectas")
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
 @app.route('/', methods=['GET', 'POST'])
+@login_requerido
 def encuesta():
     
     folio_generado = "Se generará automáticamente" 
@@ -63,7 +111,7 @@ def encuesta():
             latitud = request.form.get('latitud_gps')
             longitud = request.form.get('longitud_gps')
 
-            encuestador = "ENCUESTADOR MUNICIPAL"
+            encuestador = session.get('usuario')
             
             # --- GENERAR FECHA EN PYTHON PARA EL VARCHAR(20) ---
             fecha_actual = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

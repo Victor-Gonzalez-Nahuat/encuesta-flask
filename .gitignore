@@ -1,0 +1,4 @@
+.env
+venv
+*.jpg
+verificacion_foto.py

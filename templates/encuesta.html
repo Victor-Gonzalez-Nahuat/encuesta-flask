@@ -14,11 +14,24 @@
 </head>
 <body>
     <nav class="navbar navbar-dark bg-primary">
-        <div class="container-fluid container">
-            <span class="navbar-brand mb-0 h1">Encuesta de Propiedades - Telchac</span>
+        <div class="container-fluid container d-flex justify-content-between">
+            <span class="navbar-brand mb-0 h1">
+                Encuesta de Propiedades - Telchac
+            </span>
+
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    👤 {{ session['usuario'] }}
+                </span>
+
+                <a href="{{ url_for('logout') }}"
+                class="btn btn-outline-light btn-sm"
+                onclick="return confirm('¿Cerrar sesión del encuestador?');">
+                    Cerrar sesión
+                </a>
+            </div>
         </div>
     </nav>
-
     <div class="container">
         {% if error %}
         <div class="alert alert-danger" role="alert">{{ error }}</div>
